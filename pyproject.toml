@@ -40,7 +40,7 @@ dependencies = [
   "pydantic-settings>=2.10,<3",
   "python-multipart>=0.0.20,<1",
   "polars>=1.31,<2",
-  "pyarrow>=20,<22",
+  "pyarrow>=20,<26",
   "numpy>=2.0,<2.4",
   "tzdata>=2025.2",
 ]
