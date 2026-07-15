@@ -1,6 +1,6 @@
 # Meteor Quant
 
-**Cross-platform crypto research, deterministic backtesting, and Kraken paper trading.**
+**Cross-platform Deep Learning trading strategies research, backtesting, and paper trading.**
 
 Meteor Quant combines a Polars research layer, an event-driven Rust execution engine, a Python reference engine, a FastAPI control plane, and a React dashboard. It is designed for reproducible strategy research rather than live-money execution.
 
@@ -20,9 +20,9 @@ Meteor Quant combines a Polars research layer, an event-driven Rust execution en
 - Forecast q10/median/q90 price overlays on the same BTC/USD scale as candles.
 - Docker, Windows PowerShell, Linux/macOS shell, and pure-Python fallback support.
 
-## Showcase scope
+## Scope
 
-This public edition intentionally excludes the experimental high-turnover BTC pullback strategy and its large parameter-search/cache subsystem. The repository contains the stable platform, baseline strategies, model pipelines, and paper-trading infrastructure without research-specific artifacts.
+This public edition intentionally excludes the experimental strategies and its large parameter-search/cache subsystem. The repository contains the stable platform, baseline strategies, model pipelines, and paper-trading infrastructure without research-specific artifacts.
 
 ## Architecture
 
@@ -54,7 +54,6 @@ Core platform:
 
 - Python 3.11 or newer, 64-bit.
 - Windows, Linux, or macOS.
-- Enough disk space for source CSVs and Parquet caches.
 
 Optional components:
 
