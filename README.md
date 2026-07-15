@@ -4,7 +4,7 @@
 
 Meteor Quant combines a Polars research layer, an event-driven Rust execution engine, a Python reference engine, a FastAPI control plane, and a React dashboard. It is designed for reproducible strategy research rather than live-money execution.
 
-> **Safety boundary:** Meteor Quant is paper-only. It does not read private exchange credentials and it cannot submit live orders.
+> **Safety boundary:** Public Meteor Quant is paper-only BTC/USD on Kraken. It cannot submit live orders.
 
 ## Highlights
 
@@ -45,8 +45,6 @@ flowchart TD
     L --> M
     M --> N[React dashboard]
 ```
-
-The browser never calculates P&L. Strategies produce desired signed exposure; the broker/engine owns fills, accounting, and costs.
 
 ## Requirements
 
@@ -117,8 +115,7 @@ The dashboard is available at `http://127.0.0.1:8000`. Mount raw data into `./da
 Meteor Quant discovers the following source files recursively under `data/`:
 
 ```text
-2021-02-23_2024-08-28_BTCUSDT_1s.csv
-2024-08-29_2026-07-12_BTCUSDT_1s.csv
+2021-02-23_2026-07-12_BTCUSDT_1s.csv
 ```
 
 Expected columns:
