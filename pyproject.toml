@@ -1,0 +1,134 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "meteor-quant"
+version = "1.0.0"
+description = "Cross-platform crypto research, event-driven backtesting, and Kraken paper-trading platform"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Meteor Quant Contributors" }]
+keywords = [
+  "algorithmic-trading",
+  "backtesting",
+  "crypto",
+  "kraken",
+  "machine-learning",
+  "polars",
+  "quantitative-finance",
+  "rust",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Office/Business :: Financial :: Investment",
+  "Typing :: Typed",
+]
+dependencies = [
+  "fastapi>=0.116,<1",
+  "uvicorn[standard]>=0.35,<1",
+  "httpx>=0.28,<1",
+  "websockets>=15,<16",
+  "pydantic>=2.11,<3",
+  "pydantic-settings>=2.10,<3",
+  "python-multipart>=0.0.20,<1",
+  "polars>=1.31,<2",
+  "pyarrow>=20,<22",
+  "numpy>=2.0,<2.4",
+  "tzdata>=2025.2",
+]
+
+[project.optional-dependencies]
+marketlm = ["torch>=2.5,<3"]
+markethybrid = ["torch>=2.5,<3"]
+timesfm = ["timesfm[torch]>=2.0.2,<3"]
+ml = [
+  "torch>=2.5,<3",
+  "timesfm[torch]>=2.0.2,<3",
+]
+dev = [
+  "build>=1.2,<2",
+  "pytest>=8.4,<10",
+  "pytest-asyncio>=1.1,<2",
+  "ruff>=0.12,<1",
+  "mypy>=1.17,<2",
+]
+
+[project.scripts]
+meteor = "meteor_quant.cli:main"
+mq = "meteor_quant.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/meteor_quant"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "/src",
+  "/frontend",
+  "/rust",
+  "/configs",
+  "/docs",
+  "/user_strategies",
+  "/tests",
+  "/scripts",
+  "/*.md",
+  "/*.toml",
+  "/*.sh",
+  "/*.ps1",
+  "/Dockerfile",
+  "/docker-compose.yml",
+  "/Makefile",
+  "/.env.example",
+  "/.editorconfig",
+  "/.gitignore",
+]
+exclude = [
+  "/frontend/node_modules",
+  "/frontend/tsconfig.tsbuildinfo",
+  "/data",
+  "/dist",
+  "/build",
+]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+src = ["src", "tests", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+packages = ["meteor_quant"]
+exclude = ["user_strategies"]
+
+[[tool.mypy.overrides]]
+module = [
+  "meteor_quant.marketlm.*",
+  "meteor_quant.markethybrid.*",
+  "meteor_quant.timesfm.*",
+]
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*", "timesfm", "timesfm.*"]
+ignore_missing_imports = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/test_marketlm.py" = ["E402"]
+"tests/test_markethybrid.py" = ["E402"]

@@ -1,0 +1,282 @@
+{
+  "name": "btc-markethybrid-15s-quality",
+  "data": {
+    "dataset_key": "btcusdt_1s",
+    "timeframe_seconds": 15,
+    "start_timestamp": null,
+    "end_timestamp": null,
+    "indicators": [
+      {
+        "key": "wavetrend",
+        "parameters": {
+          "channel_length": 10,
+          "average_length": 21,
+          "signal_length": 4
+        }
+      },
+      {
+        "key": "rsi",
+        "parameters": {
+          "period": 14
+        }
+      },
+      {
+        "key": "macd",
+        "parameters": {
+          "fast": 12,
+          "slow": 26,
+          "signal": 9
+        }
+      },
+      {
+        "key": "atr",
+        "parameters": {
+          "period": 14
+        }
+      },
+      {
+        "key": "rolling_vwap",
+        "parameters": {
+          "period": 60
+        }
+      },
+      {
+        "key": "volume_zscore",
+        "parameters": {
+          "period": 100
+        }
+      }
+    ],
+    "horizons_seconds": [
+      30,
+      60,
+      180,
+      300,
+      900
+    ],
+    "patch_size": 8,
+    "context_patches": 256,
+    "train_fraction": 0.8,
+    "validation_fraction": 0.1,
+    "purge_seconds": 900,
+    "cost_threshold_bps": 30.0
+  },
+  "model": {
+    "d_model": 384,
+    "n_layers": 12,
+    "n_heads": 6,
+    "mlp_hidden": 1152,
+    "dropout": 0.08,
+    "rope_base": 10000.0,
+    "activation_checkpointing": true
+  },
+  "predictor": {
+    "d_model": 256,
+    "n_layers": 4,
+    "n_heads": 4,
+    "mlp_hidden": 768,
+    "dropout": 0.08
+  },
+  "jepa": {
+    "target_patch_offsets": [
+      1,
+      2,
+      4,
+      7
+    ],
+    "ema_start": 0.996,
+    "ema_end": 0.9999,
+    "latent_loss_weight": 1.0,
+    "variance_loss_weight": 0.05,
+    "covariance_loss_weight": 0.005
+  },
+  "policy": {
+    "horizon_weights": {
+      "30": 0.5,
+      "60": 1.0,
+      "180": 2.0,
+      "300": 4.0,
+      "900": 2.0
+    },
+    "position_scale_bps": 30.0,
+    "confidence_temperature": 2.0,
+    "intent_deadband": 0.25
+  },
+  "training": {
+    "max_steps": 40000,
+    "batch_size": 8,
+    "gradient_accumulation_steps": 4,
+    "learning_rate": 0.00015,
+    "min_learning_rate": 0.000015,
+    "warmup_steps": 2000,
+    "weight_decay": 0.1,
+    "gradient_clip_norm": 1.0,
+    "validation_interval": 500,
+    "checkpoint_interval": 2000,
+    "log_interval": 20,
+    "validation_windows": 16384,
+    "num_workers": 0,
+    "prefetch_factor": 2,
+    "autoregressive_loss_weight": 0.5,
+    "forecast_loss_weight": 2.0,
+    "direction_loss_weight": 0.5,
+    "amp": "auto",
+    "compile": "off",
+    "compile_mode": "default",
+    "resume": "auto",
+    "seed": 20260713,
+    "device": "auto",
+    "mode": "staged",
+    "actionable_loss_weight": 1.5,
+    "jepa_loss_weight": 0.5,
+    "policy_position_loss_weight": 0.75,
+    "policy_confidence_loss_weight": 0.5,
+    "policy_intent_loss_weight": 0.75,
+    "direction_class_weight_cap": 8.0,
+    "actionable_pos_weight_cap": 12.0,
+    "actionable_threshold": 0.6,
+    "stages": [
+      {
+        "name": "representation_pretraining",
+        "end_step": 8000,
+        "learning_rate": 0.0002,
+        "min_learning_rate": 0.00002,
+        "warmup_steps": 1500,
+        "loss_weights": {
+          "autoregressive": 0.5,
+          "forecast": 2.0,
+          "direction": 0.5,
+          "actionable": 0.5,
+          "jepa": 1.0,
+          "policy_position": 0.0,
+          "policy_confidence": 0.0,
+          "policy_intent": 0.0
+        },
+        "trainable_modules": {
+          "online_encoder": true,
+          "autoregressive_head": true,
+          "forecast_head": true,
+          "direction_head": true,
+          "actionable_head": true,
+          "jepa_predictor": true,
+          "policy_position_head": false,
+          "policy_confidence_head": false,
+          "policy_intent_head": false
+        },
+        "learning_rate_multipliers": {
+          "online_encoder": 1.0,
+          "autoregressive_head": 1.0,
+          "forecast_head": 1.0,
+          "direction_head": 1.0,
+          "actionable_head": 1.0,
+          "jepa_predictor": 1.0,
+          "policy_position_head": 1.0,
+          "policy_confidence_head": 1.0,
+          "policy_intent_head": 1.0
+        },
+        "early_stopping": {
+          "enabled": false,
+          "patience_validations": 12,
+          "minimum_delta": 0.001,
+          "restore_best": true
+        }
+      },
+      {
+        "name": "joint_training",
+        "end_step": 24000,
+        "learning_rate": 0.00015,
+        "min_learning_rate": 0.000015,
+        "warmup_steps": 750,
+        "loss_weights": {
+          "autoregressive": 0.25,
+          "forecast": 2.0,
+          "direction": 0.75,
+          "actionable": 1.5,
+          "jepa": 0.5,
+          "policy_position": 0.75,
+          "policy_confidence": 0.5,
+          "policy_intent": 0.75
+        },
+        "trainable_modules": {
+          "online_encoder": true,
+          "autoregressive_head": true,
+          "forecast_head": true,
+          "direction_head": true,
+          "actionable_head": true,
+          "jepa_predictor": true,
+          "policy_position_head": true,
+          "policy_confidence_head": true,
+          "policy_intent_head": true
+        },
+        "learning_rate_multipliers": {
+          "online_encoder": 1.0,
+          "autoregressive_head": 1.0,
+          "forecast_head": 1.0,
+          "direction_head": 1.0,
+          "actionable_head": 1.0,
+          "jepa_predictor": 1.0,
+          "policy_position_head": 1.0,
+          "policy_confidence_head": 1.0,
+          "policy_intent_head": 1.0
+        },
+        "early_stopping": {
+          "enabled": false,
+          "patience_validations": 12,
+          "minimum_delta": 0.001,
+          "restore_best": true
+        }
+      },
+      {
+        "name": "policy_finetuning",
+        "end_step": 40000,
+        "learning_rate": 0.00008,
+        "min_learning_rate": 8e-6,
+        "warmup_steps": 500,
+        "loss_weights": {
+          "autoregressive": 0.1,
+          "forecast": 1.5,
+          "direction": 1.0,
+          "actionable": 2.0,
+          "jepa": 0.25,
+          "policy_position": 1.0,
+          "policy_confidence": 0.75,
+          "policy_intent": 1.0
+        },
+        "trainable_modules": {
+          "online_encoder": true,
+          "autoregressive_head": true,
+          "forecast_head": true,
+          "direction_head": true,
+          "actionable_head": true,
+          "jepa_predictor": false,
+          "policy_position_head": true,
+          "policy_confidence_head": true,
+          "policy_intent_head": true
+        },
+        "learning_rate_multipliers": {
+          "online_encoder": 0.2,
+          "autoregressive_head": 0.25,
+          "forecast_head": 0.5,
+          "direction_head": 0.75,
+          "actionable_head": 1.0,
+          "jepa_predictor": 0.0,
+          "policy_position_head": 1.0,
+          "policy_confidence_head": 1.0,
+          "policy_intent_head": 1.0
+        },
+        "early_stopping": {
+          "enabled": true,
+          "patience_validations": 12,
+          "minimum_delta": 0.001,
+          "restore_best": true
+        }
+      }
+    ],
+    "checkpoint_selection": {
+      "metric": "hybrid_score",
+      "mode": "max"
+    },
+    "allow_schedule_change_on_resume": false
+  },
+  "prepare_only": false
+}

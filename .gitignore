@@ -1,0 +1,43 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Node / frontend
+frontend/node_modules/
+frontend/tsconfig.tsbuildinfo
+frontend/dist/assets/*.map
+
+# Rust
+rust/meteor-engine/target/
+
+# Local configuration
+.env
+
+# Local databases and market/model artifacts
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+data/**/*.csv
+data/**/*.parquet
+data/**/*.json
+data/**/*.pt
+data/**/*.npy
+data/**/*.mmap
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
