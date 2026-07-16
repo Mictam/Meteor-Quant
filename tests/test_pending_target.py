@@ -6,7 +6,7 @@ import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 import pytest
 
-from aegis_quant_hybrid.engine import BacktestConfig, PreparedSignals, PythonArrowEngine
+from meteor_quant.engine import BacktestConfig, PreparedSignals, PythonArrowEngine
 
 
 @pytest.mark.parametrize(

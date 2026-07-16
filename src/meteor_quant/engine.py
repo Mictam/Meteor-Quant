@@ -15,9 +15,9 @@ import polars as pl
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
-from aegis_quant_hybrid import __version__
-from aegis_quant_hybrid.datasets import DatasetCatalog, stable_hash
-from aegis_quant_hybrid.strategies.sdk import StrategyPlugin
+from meteor_quant import __version__
+from meteor_quant.datasets import DatasetCatalog, stable_hash
+from meteor_quant.strategies.sdk import StrategyPlugin
 
 
 @dataclass(slots=True, frozen=True)
@@ -328,14 +328,14 @@ class HybridBacktestService:
         if self.rust_engine is not None:
             candidates.append(self.rust_engine)
         project_root = self.catalog.data_dir.parent
-        executable = "aegis-engine.exe" if sys.platform == "win32" else "aegis-engine"
+        executable = "meteor-engine.exe" if sys.platform == "win32" else "meteor-engine"
         candidates.extend(
             [
-                project_root / "rust" / "aegis-engine" / "target" / "release" / executable,
+                project_root / "rust" / "meteor-engine" / "target" / "release" / executable,
                 project_root / "bin" / executable,
             ]
         )
-        which = shutil.which("aegis-engine")
+        which = shutil.which("meteor-engine")
         if which:
             candidates.append(Path(which))
         return next((candidate.resolve() for candidate in candidates if candidate.exists()), None)

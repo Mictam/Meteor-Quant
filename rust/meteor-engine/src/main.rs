@@ -9,7 +9,11 @@ use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use serde::Serialize;
 
 #[derive(Parser, Debug)]
-#[command(name = "aegis-engine", version, about = "Aegis Quant streaming backtest engine")]
+#[command(
+    name = "meteor-engine",
+    version,
+    about = "Meteor Quant streaming backtest engine"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -195,7 +199,7 @@ impl EngineState {
             self.return_m2 += delta * (value - self.return_mean);
         }
         self.previous_equity = Some(equity);
-        if self.bar_count % self.sample_stride == 0 || is_last {
+        if self.bar_count.is_multiple_of(self.sample_stride) || is_last {
             self.equity.push(EquityPoint {
                 timestamp,
                 equity,
