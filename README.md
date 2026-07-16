@@ -26,6 +26,9 @@ Meteor Quant combines a Polars research layer, an event-driven Rust execution en
 - Forecast q10/median/q90 price overlays on the same BTC/USD scale as candles.
 - Docker, Windows PowerShell, Linux/macOS shell, and pure-Python fallback support.
 
+<img width="1887" height="1199" alt="Screenshot 2026-07-16 153730" src="https://github.com/user-attachments/assets/bd4cd939-132e-4c58-8c2e-cdf7d2481fda" />
+
+
 ## Scope
 
 This public edition intentionally excludes the experimental strategies and its large parameter-search/cache subsystem. The repository contains the stable platform, baseline strategies, model pipelines, and paper-trading infrastructure without research-specific artifacts.
