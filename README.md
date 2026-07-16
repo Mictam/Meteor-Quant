@@ -1,5 +1,11 @@
 # Meteor Quant
 
+[![Language](https://img.shields.io/badge/Language-Rust%20%7C%20Python%20%7C%20TypeScript-blue.svg)](#requirements)
+[![Engine](https://img.shields.io/badge/Engine-Rust%20Arrow--Streaming-orange.svg)](#high-performance-execution--backtesting)
+[![Data Stack](https://img.shields.io/badge/Data%20Stack-Polars%20%7C%20Parquet%20%7C%20SQLite-green.svg)](#data-pipeline--architecture)
+[![ML Framework](https://img.shields.io/badge/ML%2FDL-PyTorch%20%7C%20TimesFM%202.5%20%7C%20JEPA-violet.svg)](#advanced-machine-learning-suites)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 **Cross-platform Deep Learning trading strategies research, backtesting, and paper trading.**
 
 Meteor Quant combines a Polars research layer, an event-driven Rust execution engine, a Python reference engine, a FastAPI control plane, and a React dashboard. It is designed for reproducible strategy research rather than live-money execution.
