@@ -15,9 +15,9 @@ import polars as pl
 import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
-from meteor_quant import __version__
-from meteor_quant.datasets import DatasetCatalog, stable_hash
-from meteor_quant.strategies.sdk import StrategyPlugin
+from aegis_quant_hybrid import __version__
+from aegis_quant_hybrid.datasets import DatasetCatalog, stable_hash
+from aegis_quant_hybrid.strategies.sdk import StrategyPlugin
 
 
 @dataclass(slots=True, frozen=True)
@@ -76,6 +76,36 @@ class HybridBacktestService:
         self.result_dir.mkdir(parents=True, exist_ok=True)
         self.rust_engine = rust_engine
 
+    def signal_cache_key(
+        self,
+        *,
+        dataset_key: str,
+        strategy: StrategyPlugin,
+        timeframe_seconds: int,
+        start_timestamp: int | None,
+        end_timestamp: int | None,
+    ) -> str:
+        descriptor = self.catalog.prepare(dataset_key)
+        return stable_hash(
+            {
+                "dataset": dataset_key,
+                "dataset_updated_at": descriptor.updated_at,
+                "strategy": strategy.key,
+                "strategy_identity": strategy.signal_cache_identity(),
+                "parameters": strategy.parameters.model_dump(mode="json"),
+                "timeframe_seconds": timeframe_seconds,
+                "start_timestamp": start_timestamp,
+                "end_timestamp": end_timestamp,
+                "signal_schema_version": 4,
+            }
+        )
+
+    def signal_cache_paths(self, cache_key: str) -> tuple[Path, Path]:
+        return (
+            self.signal_dir / f"{cache_key}.parquet",
+            self.signal_dir / f"{cache_key}.json",
+        )
+
     def prepare_signals(
         self,
         *,
@@ -86,21 +116,14 @@ class HybridBacktestService:
         end_timestamp: int | None,
         force: bool = False,
     ) -> PreparedSignals:
-        descriptor = self.catalog.prepare(dataset_key)
-        payload = {
-            "dataset": dataset_key,
-            "dataset_updated_at": descriptor.updated_at,
-            "strategy": strategy.key,
-            "strategy_identity": strategy.signal_cache_identity(),
-            "parameters": strategy.parameters.model_dump(mode="json"),
-            "timeframe_seconds": timeframe_seconds,
-            "start_timestamp": start_timestamp,
-            "end_timestamp": end_timestamp,
-            "signal_schema_version": 4,
-        }
-        cache_key = stable_hash(payload)
-        signal_path = self.signal_dir / f"{cache_key}.parquet"
-        metadata_path = self.signal_dir / f"{cache_key}.json"
+        cache_key = self.signal_cache_key(
+            dataset_key=dataset_key,
+            strategy=strategy,
+            timeframe_seconds=timeframe_seconds,
+            start_timestamp=start_timestamp,
+            end_timestamp=end_timestamp,
+        )
+        signal_path, metadata_path = self.signal_cache_paths(cache_key)
         if signal_path.exists() and metadata_path.exists() and not force:
             metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
             return PreparedSignals(path=signal_path, **metadata)
@@ -305,14 +328,14 @@ class HybridBacktestService:
         if self.rust_engine is not None:
             candidates.append(self.rust_engine)
         project_root = self.catalog.data_dir.parent
-        executable = "meteor-engine.exe" if sys.platform == "win32" else "meteor-engine"
+        executable = "aegis-engine.exe" if sys.platform == "win32" else "aegis-engine"
         candidates.extend(
             [
-                project_root / "rust" / "meteor-engine" / "target" / "release" / executable,
+                project_root / "rust" / "aegis-engine" / "target" / "release" / executable,
                 project_root / "bin" / executable,
             ]
         )
-        which = shutil.which("meteor-engine")
+        which = shutil.which("aegis-engine")
         if which:
             candidates.append(Path(which))
         return next((candidate.resolve() for candidate in candidates if candidate.exists()), None)
@@ -322,6 +345,16 @@ class PythonArrowEngine:
     """Streaming reference engine used when the Rust binary has not been built yet."""
 
     def run(self, prepared: PreparedSignals, config: BacktestConfig) -> dict[str, Any]:
+        return self.run_range(prepared, config, start_timestamp=None, end_timestamp=None)
+
+    def run_range(
+        self,
+        prepared: PreparedSignals,
+        config: BacktestConfig,
+        *,
+        start_timestamp: int | None,
+        end_timestamp: int | None,
+    ) -> dict[str, Any]:
         parquet = pq.ParquetFile(prepared.path)
         total_rows = parquet.metadata.num_rows
         stride = max(1, math.ceil(total_rows / config.max_equity_points))
@@ -351,16 +384,22 @@ class PythonArrowEngine:
             values = self._batch_columns(batch)
             for offset in range(batch.num_rows):
                 timestamp = int(values["timestamp"][offset].as_py())
+                if start_timestamp is not None and timestamp < start_timestamp:
+                    continue
+                if end_timestamp is not None and timestamp > end_timestamp:
+                    continue
                 open_price = float(values["open"][offset].as_py())
                 close_price = float(values["close"][offset].as_py())
                 if row_index == 0:
                     first_close = close_price
                     first_timestamp = timestamp
                 if pending_target is not None:
+                    target_to_execute = pending_target
+                    pending_target = None
                     cash, quantity, fee, fill = self._rebalance(
                         cash=cash,
                         quantity=quantity,
-                        target=pending_target,
+                        target=target_to_execute,
                         open_price=open_price,
                         timestamp=timestamp,
                         config=config,

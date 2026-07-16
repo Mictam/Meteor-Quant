@@ -9,11 +9,7 @@ use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use serde::Serialize;
 
 #[derive(Parser, Debug)]
-#[command(
-    name = "meteor-engine",
-    version,
-    about = "Meteor Quant streaming backtest engine"
-)]
+#[command(name = "aegis-engine", version, about = "Aegis Quant streaming backtest engine")]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -166,7 +162,7 @@ impl EngineState {
             self.first_close = Some(close);
             self.first_timestamp = timestamp;
         }
-        if let Some(pending) = self.pending_target {
+        if let Some(pending) = self.pending_target.take() {
             self.rebalance(pending, open, timestamp, args);
         }
         if let Some(value) = target.filter(|value| value.is_finite()) {
@@ -199,7 +195,7 @@ impl EngineState {
             self.return_m2 += delta * (value - self.return_mean);
         }
         self.previous_equity = Some(equity);
-        if self.bar_count.is_multiple_of(self.sample_stride) || is_last {
+        if self.bar_count % self.sample_stride == 0 || is_last {
             self.equity.push(EquityPoint {
                 timestamp,
                 equity,
@@ -213,11 +209,7 @@ impl EngineState {
     }
 
     fn rebalance(&mut self, target: f64, open: f64, timestamp: i64, args: &BacktestArgs) {
-        let lower = if args.allow_short {
-            -args.max_leverage
-        } else {
-            0.0
-        };
+        let lower = if args.allow_short { -args.max_leverage } else { 0.0 };
         let target = target.clamp(lower, args.max_leverage);
         let equity = self.cash + self.quantity * open;
         if equity <= 0.0 {
@@ -321,8 +313,8 @@ fn run_backtest(args: BacktestArgs) -> Result<()> {
     validate_args(&args)?;
     let file = File::open(&args.input)
         .with_context(|| format!("cannot open input parquet: {}", args.input.display()))?;
-    let builder =
-        ParquetRecordBatchReaderBuilder::try_new(file).context("cannot read parquet metadata")?;
+    let builder = ParquetRecordBatchReaderBuilder::try_new(file)
+        .context("cannot read parquet metadata")?;
     let total_rows = builder.metadata().file_metadata().num_rows() as u64;
     let mut reader = builder
         .with_batch_size(262_144)
@@ -396,3 +388,57 @@ fn main() -> Result<()> {
         Command::Backtest(args) => run_backtest(args),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_args() -> BacktestArgs {
+        BacktestArgs {
+            input: PathBuf::new(),
+            output: PathBuf::new(),
+            timeframe_seconds: 1,
+            initial_equity: 10_000.0,
+            fee_bps: 0.0,
+            slippage_bps: 0.0,
+            spread_bps: 0.0,
+            minimum_order_notional: 1.0,
+            max_leverage: 1.0,
+            allow_short: false,
+            max_equity_points: 100,
+            max_fills_returned: 100,
+        }
+    }
+
+    fn assert_single_fill(targets: [Option<f64>; 5]) {
+        let args = test_args();
+        let prices = [100.0, 200.0, 50.0, 300.0, 80.0];
+        let last_index = prices.len() - 1;
+        let mut state = EngineState::new(&args, prices.len() as u64);
+
+        for (index, (price, target)) in prices.into_iter().zip(targets).enumerate() {
+            state
+                .process_row(
+                    index as i64 + 1,
+                    price,
+                    price,
+                    target,
+                    &args,
+                    index == last_index,
+                )
+                .expect("row should be processed");
+        }
+
+        assert_eq!(state.fill_count, 1);
+        assert_eq!(state.fills.len(), 1);
+        assert_eq!(state.fills[0].timestamp, 2);
+        assert!(state.pending_target.is_none());
+    }
+
+    #[test]
+    fn unchanged_or_sparse_target_is_executed_only_once() {
+        assert_single_fill([Some(0.5); 5]);
+        assert_single_fill([Some(0.5), None, None, None, None]);
+    }
+}
+
