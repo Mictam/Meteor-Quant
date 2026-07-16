@@ -213,7 +213,11 @@ impl EngineState {
     }
 
     fn rebalance(&mut self, target: f64, open: f64, timestamp: i64, args: &BacktestArgs) {
-        let lower = if args.allow_short { -args.max_leverage } else { 0.0 };
+        let lower = if args.allow_short {
+            -args.max_leverage
+        } else {
+            0.0
+        };
         let target = target.clamp(lower, args.max_leverage);
         let equity = self.cash + self.quantity * open;
         if equity <= 0.0 {
@@ -317,8 +321,8 @@ fn run_backtest(args: BacktestArgs) -> Result<()> {
     validate_args(&args)?;
     let file = File::open(&args.input)
         .with_context(|| format!("cannot open input parquet: {}", args.input.display()))?;
-    let builder = ParquetRecordBatchReaderBuilder::try_new(file)
-        .context("cannot read parquet metadata")?;
+    let builder =
+        ParquetRecordBatchReaderBuilder::try_new(file).context("cannot read parquet metadata")?;
     let total_rows = builder.metadata().file_metadata().num_rows() as u64;
     let mut reader = builder
         .with_batch_size(262_144)
@@ -445,4 +449,3 @@ mod tests {
         assert_single_fill([Some(0.5), None, None, None, None]);
     }
 }
-
