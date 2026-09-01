@@ -48,10 +48,10 @@ dependencies = [
 [project.optional-dependencies]
 marketlm = ["torch>=2.5,<3"]
 markethybrid = ["torch>=2.5,<3"]
-timesfm = ["timesfm[torch]>=2.0.2,<3"]
+timesfm = ["timesfm[torch]>=2.0.2,<4"]
 ml = [
   "torch>=2.5,<3",
-  "timesfm[torch]>=2.0.2,<3",
+  "timesfm[torch]>=2.0.2,<4",
 ]
 dev = [
   "build>=1.2,<2",
